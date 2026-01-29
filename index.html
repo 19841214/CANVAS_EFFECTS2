@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Advanced Visual Lab - Math & Biology</title>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(30, 41, 59, 0.3); }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(71, 85, 105, 0.6); border-radius: 3px; }
+        body { margin: 0; overflow: hidden; background-color: #0f172a; overscroll-behavior: none; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // --- ICONS ---
+        const IconBoids = ({size=24}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>;
+        const IconBug = ({size=24}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m8 2 1.88 1.88"/><path d="M14.12 3.88 16 2"/><path d="M9 7.13v-1a3.003 3.003 0 1 1 6 0v1"/><path d="M12 20c-3.3 0-6-2-6-5.5V11a6 6 0 0 1 12 0v3.5c0 3.5-2.7 5.5-6 5.5Z"/><path d="M12 20v4"/><path d="M6 13H2"/><path d="M3 21c0-2.1 1.7-3.9 3.8-4"/><path d="M20.9 16.9c2.1.1 3.8 1.9 3.8 4"/><path d="M18 13h4"/></svg>;
+        const IconGrid = ({size=24}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/><path d="M15 3v18"/></svg>;
+        const IconHex = ({size=24}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>;
+        const IconNetwork = ({size=24}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="5" r="3"/><line x1="12" x2="12" y1="8" y2="16"/><line x1="8" x2="16" y1="8" y2="16"/><circle cx="5" cy="19" r="3"/><circle cx="19" cy="19" r="3"/></svg>;
+        const IconInfinity = ({size=24}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 12c-2-2.67-4-4-6-4a4 4 0 1 0 0 8c2 0 4-1.33 6-4Zm0 0c2 2.67 4 4 6 4a4 4 0 1 0 0-8c-2 0-4 1.33-6 4Z"/></svg>;
+        const IconFlower = ({size=24}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 7.5a4.5 4.5 0 1 1 4.5 4.5M12 7.5A4.5 4.5 0 1 0 7.5 12M12 7.5V9m-4.5 3a4.5 4.5 0 1 1 4.5 4.5M7.5 12H9m3 4.5a4.5 4.5 0 1 0 4.5-4.5M12 16.5V15m4.5-3H15"/></svg>;
+        
+        // Common UI Icons
+        const IconVolume2 = ({size=24}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>;
+        const IconVolumeX = ({size=24}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" x2="17" y1="9" y2="15"/><line x1="17" x2="23" y1="9" y2="15"/></svg>;
+        const IconPlay = ({size=24}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>;
+        const IconSettings = ({size=24}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.09a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.39a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>;
+        const IconSliders = ({size=24}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="4" x2="4" y1="21" y2="14"/><line x1="4" x2="4" y1="10" y2="3"/><line x1="12" x2="12" y1="21" y2="12"/><line x1="12" x2="12" y1="8" y2="3"/><line x1="20" x2="20" y1="21" y2="16"/><line x1="20" x2="20" y1="12" y2="3"/><line x1="2" x2="6" y1="14" y2="14"/><line x1="10" x2="14" y1="8" y2="8"/><line x1="18" x2="22" y1="16" y2="16"/></svg>;
+
+        const DEFAULT_PARAMS = {
+            boids: {
+                separation: { value: 4.0, min: 1, max: 10, label: 'Separation' },
+                alignment: { value: 1.0, min: 0.1, max: 5, label: 'Alignment' },
+                cohesion: { value: 1.0, min: 0.1, max: 5, label: 'Cohesion' }
+            },
+            slime: {
+                sensorAngle: { value: 45, min: 10, max: 90, label: 'Sensor Angle' },
+                turnSpeed: { value: 0.2, min: 0.05, max: 1.0, label: 'Turn Speed' },
+                trailFade: { value: 0.05, min: 0.01, max: 0.2, label: 'Trail Fade' }
+            },
+            gameoflife: {
+                speed: { value: 10, min: 1, max: 20, label: 'Speed' },
+                fade: { value: 0.1, min: 0.01, max: 0.5, label: 'Trail Fade' }
+            },
+            voronoi: {
+                count: { value: 30, min: 5, max: 100, label: 'Cell Count' },
+                speed: { value: 1, min: 0, max: 5, label: 'Movement' }
+            },
+            delaunay: {
+                radius: { value: 150, min: 50, max: 300, label: 'Link Distance' },
+                count: { value: 60, min: 20, max: 150, label: 'Node Count' }
+            },
+            lissajous: {
+                speed: { value: 0.02, min: 0.005, max: 0.1, label: 'Speed' },
+                complexity: { value: 3, min: 1, max: 10, label: 'Complexity' }
+            },
+            phyllotaxis: {
+                angle: { value: 137.5, min: 130, max: 145, label: 'Angle (Deg)' },
+                spread: { value: 4, min: 2, max: 8, label: 'Spread' }
+            }
+        };
+
+        // --- EFFECT IMPLEMENTATIONS ---
+
+        // 1. BOIDS (Unchanged)
+        class BoidsEffect {
+            constructor(w, h) { this.w = w; this.h = h; this.boids = []; this.init(); }
+            init() {
+                this.boids = [];
+                for(let i=0; i<150; i++) {
+                    this.boids.push({
+                        x: Math.random()*this.w, y: Math.random()*this.h,
+                        vx: Math.random()*4-2, vy: Math.random()*4-2,
+                        color: `hsl(${Math.random()*60+180}, 70%, 60%)`
+                    });
+                }
+            }
+            resize(w, h) { this.w=w; this.h=h; }
+            update(mouse, params) {
+                const sepMult = params.separation || 4;
+                const aliMult = params.alignment || 1;
+                const cohMult = params.cohesion || 1;
+                
+                for(let b of this.boids) {
+                    let sepX=0, sepY=0, aliX=0, aliY=0, cohX=0, cohY=0;
+                    let count = 0;
+                    for(let other of this.boids) {
+                        if(b === other) continue;
+                        let dx = other.x - b.x; let dy = other.y - b.y;
+                        let dist = Math.sqrt(dx*dx + dy*dy);
+                        if(dist < 50) {
+                            sepX -= dx/dist; sepY -= dy/dist; 
+                            aliX += other.vx; aliY += other.vy; 
+                            cohX += other.x; cohY += other.y; 
+                            count++;
+                        }
+                    }
+                    if(count > 0) {
+                        aliX /= count; aliY /= count;
+                        cohX /= count; cohY /= count;
+                        cohX = (cohX - b.x) * 0.05; cohY = (cohY - b.y) * 0.05;
+                    }
+                    
+                    let dx = mouse.x - b.x; let dy = mouse.y - b.y;
+                    let dist = Math.sqrt(dx*dx + dy*dy);
+                    if(dist < 100) { sepX -= dx*0.5; sepY -= dy*0.5; }
+
+                    b.vx += (sepX * sepMult + aliX * aliMult * 0.1 + cohX * cohMult * 0.1) * 0.05;
+                    b.vy += (sepY * sepMult + aliY * aliMult * 0.1 + cohY * cohMult * 0.1) * 0.05;
+                    
+                    let speed = Math.sqrt(b.vx*b.vx + b.vy*b.vy);
+                    if(speed > 4) { b.vx = (b.vx/speed)*4; b.vy = (b.vy/speed)*4; }
+                    
+                    b.x += b.vx; b.y += b.vy;
+                    if(b.x < 0) b.x = this.w; if(b.x > this.w) b.x = 0;
+                    if(b.y < 0) b.y = this.h; if(b.y > this.h) b.y = 0;
+                }
+            }
+            draw(ctx) {
+                ctx.clearRect(0,0,this.w, this.h);
+                for(let b of this.boids) {
+                    let angle = Math.atan2(b.vy, b.vx);
+                    ctx.save();
+                    ctx.translate(b.x, b.y);
+                    ctx.rotate(angle);
+                    ctx.beginPath();
+                    ctx.moveTo(6,0); ctx.lineTo(-4, 3); ctx.lineTo(-4, -3);
+                    ctx.fillStyle = b.color; ctx.fill();
+                    ctx.restore();
+                }
+            }
+        }
+
+        // 2. SLIME MOLD (Unchanged)
+        class SlimeEffect {
+            constructor(w, h) { 
+                this.w = w; this.h = h; this.agents = []; 
+                this.init(); 
+            }
+            init() {
+                this.agents = [];
+                for(let i=0; i<500; i++) {
+                    this.agents.push({
+                        x: this.w/2, y: this.h/2,
+                        angle: Math.random() * Math.PI * 2
+                    });
+                }
+            }
+            resize(w, h) { this.w=w; this.h=h; this.init(); }
+            update(mouse, params) {
+                const turnSpeed = params.turnSpeed || 0.2;
+                const speed = 2;
+                this.agents.forEach(a => {
+                    let angleToMouse = Math.atan2(mouse.y - a.y, mouse.x - a.x);
+                    let dist = Math.sqrt((mouse.x-a.x)**2 + (mouse.y-a.y)**2);
+                    
+                    if (dist < 300) {
+                        let diff = angleToMouse - a.angle;
+                        if (diff > Math.PI) diff -= Math.PI * 2;
+                        if (diff < -Math.PI) diff += Math.PI * 2;
+                        a.angle += diff * 0.05;
+                    }
+
+                    a.angle += (Math.random() - 0.5) * turnSpeed;
+                    a.x += Math.cos(a.angle) * speed;
+                    a.y += Math.sin(a.angle) * speed;
+
+                    if(a.x < 0) a.x = this.w; if(a.x > this.w) a.x = 0;
+                    if(a.y < 0) a.y = this.h; if(a.y > this.h) a.y = 0;
+                });
+            }
+            draw(ctx, params) {
+                ctx.fillStyle = `rgba(15, 23, 42, ${params.trailFade || 0.05})`;
+                ctx.fillRect(0,0,this.w, this.h);
+                ctx.fillStyle = '#00ffaa';
+                this.agents.forEach(a => {
+                    ctx.fillRect(a.x, a.y, 1.5, 1.5);
+                });
+            }
+        }
+
+        // 3. GAME OF LIFE (Unchanged)
+        class LifeEffect {
+            constructor(w, h) { this.w = w; this.h = h; this.res = 10; this.cols = 0; this.rows = 0; this.grid = []; this.frameCounter = 0; this.init(); }
+            init(density = 0.15) {
+                this.cols = Math.ceil(this.w / this.res);
+                this.rows = Math.ceil(this.h / this.res);
+                this.grid = new Array(this.cols).fill(null).map(() => new Array(this.rows).fill(0).map(() => Math.random() < density ? 1 : 0));
+            }
+            resize(w, h) { this.w=w; this.h=h; this.init(); }
+            update(mouse, params) {
+                const speed = params.speed || 10;
+                this.frameCounter++;
+                // Update throttle based on speed
+                if (this.frameCounter % Math.max(1, Math.floor(21 - speed)) !== 0) return;
+
+                let next = this.grid.map(arr => [...arr]);
+                for(let i=0; i<this.cols; i++) {
+                    for(let j=0; j<this.rows; j++) {
+                        let neighbors = 0;
+                        for(let x=-1; x<2; x++) {
+                            for(let y=-1; y<2; y++) {
+                                if(x===0 && y===0) continue;
+                                let col = (i + x + this.cols) % this.cols;
+                                let row = (j + y + this.rows) % this.rows;
+                                neighbors += this.grid[col][row];
+                            }
+                        }
+                        let state = this.grid[i][j];
+                        if(state === 0 && neighbors === 3) next[i][j] = 1;
+                        else if(state === 1 && (neighbors < 2 || neighbors > 3)) next[i][j] = 0;
+                        else next[i][j] = state;
+                    }
+                }
+                this.grid = next;
+
+                if(mouse.isDown) {
+                    let mx = Math.floor(mouse.x / this.res);
+                    let my = Math.floor(mouse.y / this.res);
+                    for(let i=-2; i<3; i++) for(let j=-2; j<3; j++) {
+                         let col = (mx + i + this.cols) % this.cols;
+                         let row = (my + j + this.rows) % this.rows;
+                         if (col >=0 && row >=0) this.grid[col][row] = 1;
+                    }
+                }
+            }
+            draw(ctx, params) {
+                // Use fade trail instead of clearRect
+                ctx.fillStyle = `rgba(15, 23, 42, ${params.fade || 0.1})`; 
+                ctx.fillRect(0,0,this.w, this.h);
+                
+                ctx.fillStyle = '#6366f1';
+                for(let i=0; i<this.cols; i++) {
+                    for(let j=0; j<this.rows; j++) {
+                        if(this.grid[i][j] === 1) ctx.fillRect(i*this.res, j*this.res, this.res-1, this.res-1);
+                    }
+                }
+            }
+        }
+
+        // 5. VORONOI (Unchanged)
+        class VoronoiEffect {
+            constructor(w, h) { this.w = w; this.h = h; this.seeds = []; this.init(); }
+            init() {
+                this.seeds = [];
+                for(let i=0; i<30; i++) this.seeds.push({x: Math.random()*this.w, y: Math.random()*this.h, vx: Math.random()*2-1, vy: Math.random()*2-1, color: `hsl(${Math.random()*360}, 70%, 60%)`});
+            }
+            resize(w, h) { this.w=w; this.h=h; }
+            update(mouse, params) {
+                const count = params.count || 30;
+                while(this.seeds.length < count) this.seeds.push({x: Math.random()*this.w, y: Math.random()*this.h, vx: Math.random()*2-1, vy: Math.random()*2-1, color: `hsl(${Math.random()*360}, 70%, 60%)`});
+                while(this.seeds.length > count) this.seeds.pop();
+                const speed = params.speed || 1;
+                this.seeds.forEach(s => {
+                    s.x += s.vx * speed; s.y += s.vy * speed;
+                    if(s.x<0||s.x>this.w) s.vx*=-1; if(s.y<0||s.y>this.h) s.vy*=-1;
+                    let dx = mouse.x - s.x; let dy = mouse.y - s.y;
+                    if(Math.sqrt(dx*dx+dy*dy) < 100) { s.x -= dx*0.05; s.y -= dy*0.05; }
+                });
+            }
+            draw(ctx) {
+                const res = 10; const cols = Math.ceil(this.w/res); const rows = Math.ceil(this.h/res);
+                for(let i=0; i<cols; i++) {
+                    for(let j=0; j<rows; j++) {
+                        let cx = i*res + res/2; let cy = j*res + res/2;
+                        let minDist = 99999; let closestSeed = null;
+                        for(let s of this.seeds) { let d = (s.x-cx)**2 + (s.y-cy)**2; if(d < minDist) { minDist = d; closestSeed = s; } }
+                        if(closestSeed) { ctx.fillStyle = closestSeed.color; ctx.fillRect(i*res, j*res, res, res); }
+                    }
+                }
+                this.seeds.forEach(s => { ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(s.x, s.y, 3, 0, Math.PI*2); ctx.fill(); });
+            }
+        }
+
+        // 6. DELAUNAY (Unchanged)
+        class DelaunayEffect {
+            constructor(w, h) { this.w = w; this.h = h; this.nodes = []; this.init(); }
+            init() {
+                this.nodes = [];
+                for(let i=0; i<60; i++) this.nodes.push({x: Math.random()*this.w, y: Math.random()*this.h, vx: Math.random()-0.5, vy: Math.random()-0.5});
+            }
+            resize(w, h) { this.w=w; this.h=h; }
+            update(mouse, params) {
+                const count = params.count || 60;
+                while(this.nodes.length < count) this.nodes.push({x: Math.random()*this.w, y: Math.random()*this.h, vx: Math.random()-0.5, vy: Math.random()-0.5});
+                while(this.nodes.length > count) this.nodes.pop();
+                this.nodes.forEach(n => {
+                    n.x += n.vx; n.y += n.vy;
+                    if(n.x<0||n.x>this.w) n.vx*=-1; if(n.y<0||n.y>this.h) n.vy*=-1;
+                    let dx = mouse.x - n.x; let dy = mouse.y - n.y;
+                    if(Math.sqrt(dx*dx+dy*dy) < 150) { n.x -= dx*0.02; n.y -= dy*0.02; }
+                });
+            }
+            draw(ctx, params) {
+                ctx.clearRect(0,0,this.w, this.h);
+                const maxDist = params.radius || 150;
+                ctx.strokeStyle = '#38bdf8'; ctx.fillStyle = '#38bdf8';
+                for(let i=0; i<this.nodes.length; i++) {
+                    let a = this.nodes[i];
+                    ctx.beginPath(); ctx.arc(a.x, a.y, 2, 0, Math.PI*2); ctx.fill();
+                    for(let j=i+1; j<this.nodes.length; j++) {
+                        let b = this.nodes[j];
+                        let dist = Math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2);
+                        if(dist < maxDist) { ctx.globalAlpha = 1 - (dist / maxDist); ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); }
+                    }
+                }
+                ctx.globalAlpha = 1;
+            }
+        }
+
+        // 7. LISSAJOUS (Unchanged)
+        class LissajousEffect {
+            constructor(w, h) { this.w = w; this.h = h; this.t = 0; this.path = []; this.init(); }
+            init() { this.path = []; }
+            resize(w, h) { this.w=w; this.h=h; this.path=[]; }
+            update(mouse, params) {
+                const speed = params.speed || 0.02; const complexity = params.complexity || 3;
+                this.t += speed;
+                const cx = this.w/2; const cy = this.h/2; const scale = Math.min(this.w, this.h) * 0.4;
+                let x = cx + Math.sin(this.t * complexity) * scale * Math.cos(this.t * 0.5);
+                let y = cy + Math.sin(this.t * (complexity+1)) * scale * Math.sin(this.t * 0.5);
+                x += (mouse.x - cx) * 0.1; y += (mouse.y - cy) * 0.1;
+                this.path.push({x, y}); if(this.path.length > 500) this.path.shift();
+            }
+            draw(ctx) {
+                ctx.clearRect(0,0,this.w, this.h); if(this.path.length < 2) return;
+                ctx.beginPath(); ctx.moveTo(this.path[0].x, this.path[0].y);
+                for(let i=1; i<this.path.length; i++) ctx.lineTo(this.path[i].x, this.path[i].y);
+                ctx.strokeStyle = '#f472b6'; ctx.lineWidth = 2; ctx.shadowBlur = 10; ctx.shadowColor = '#f472b6'; ctx.stroke(); ctx.shadowBlur = 0;
+                let head = this.path[this.path.length-1]; ctx.beginPath(); ctx.arc(head.x, head.y, 5, 0, Math.PI*2); ctx.fillStyle = '#fff'; ctx.fill();
+            }
+        }
+
+        // 8. PHYLLOTAXIS (Unchanged)
+        class PhyllotaxisEffect {
+            constructor(w, h) { this.w = w; this.h = h; this.n = 0; this.dots = []; this.init(); }
+            init() { this.n = 0; this.dots = []; }
+            resize(w, h) { this.w=w; this.h=h; this.init(); }
+            update(mouse, params) {
+                const angle = params.angle || 137.5; const spread = params.spread || 4;
+                if(this.dots.length < 2000) {
+                    for(let i=0; i<5; i++) {
+                        let a = this.n * (angle * Math.PI/180); let r = spread * Math.sqrt(this.n);
+                        let x = r * Math.cos(a) + this.w/2; let y = r * Math.sin(a) + this.h/2;
+                        this.dots.push({x, y, age: 0, n: this.n}); this.n++;
+                    }
+                }
+                if(mouse.click) { this.init(); mouse.click = false; }
+            }
+            draw(ctx) {
+                ctx.clearRect(0,0,this.w, this.h);
+                this.dots.forEach(d => {
+                    let size = 2 + d.n * 0.005; let hue = (d.n % 256) + 50;
+                    ctx.fillStyle = `hsl(${hue}, 80%, 60%)`; ctx.beginPath(); ctx.arc(d.x, d.y, size, 0, Math.PI*2); ctx.fill();
+                });
+                ctx.fillStyle = "rgba(255,255,255,0.7)"; ctx.textAlign = "center"; ctx.fillText("CLICK TO REGROW", this.w/2, 50);
+            }
+        }
+
+        // --- MAIN COMPONENT ---
+        const AdvancedVisualLab = () => {
+            const canvasRef = useRef(null);
+            const containerRef = useRef(null);
+            
+            // State
+            const [activeEffect, setActiveEffect] = useState('boids');
+            const [params, setParams] = useState({});
+            const [showUI, setShowUI] = useState(true);
+            const [stats, setStats] = useState({ fps: 0 });
+            const [hasStarted, setHasStarted] = useState(false); 
+            const [isMuted, setIsMuted] = useState(false);
+            const [targetFps, setTargetFps] = useState(60);
+            
+            // Refs
+            const bgmRef = useRef(null);
+            const sfxRef = useRef(null);
+            const animationRef = useRef(null);
+            const effectInstance = useRef(null);
+            const lastDrawTimeRef = useRef(0);
+            const mouse = useRef({ x: 0, y: 0, isDown: false, px: 0, py: 0, click: false });
+            const paramsRef = useRef(params);
+
+            // Params Init
+            useEffect(() => {
+                const initialParams = {};
+                const config = DEFAULT_PARAMS[activeEffect];
+                if (config) {
+                    Object.keys(config).forEach(key => initialParams[key] = config[key].value);
+                    setParams(initialParams);
+                }
+            }, [activeEffect]);
+
+            useEffect(() => { paramsRef.current = params; }, [params]);
+
+            const handleParamChange = (key, value) => setParams(prev => ({ ...prev, [key]: value }));
+
+            // Audio & Visibility
+            useEffect(() => {
+                const handleVis = () => {
+                    if (document.hidden) bgmRef.current?.pause();
+                    else if (hasStarted && !isMuted) bgmRef.current?.play().catch(()=>{});
+                };
+                document.addEventListener("visibilitychange", handleVis);
+                return () => document.removeEventListener("visibilitychange", handleVis);
+            }, [hasStarted, isMuted]);
+
+            const handleStartApp = () => {
+                sfxRef.current?.play().catch(()=>{});
+                bgmRef.current?.play().catch(()=>{});
+                setHasStarted(true);
+            };
+
+            const toggleMute = () => {
+                if (bgmRef.current) {
+                    bgmRef.current.muted = !isMuted;
+                    setIsMuted(!isMuted);
+                }
+            };
+
+            // Main Loop
+            useEffect(() => {
+                const canvas = canvasRef.current;
+                const ctx = canvas.getContext('2d');
+                const container = containerRef.current;
+                
+                let w = container.clientWidth; let h = container.clientHeight;
+                canvas.width = w; canvas.height = h;
+
+                const loadEffect = () => {
+                    switch(activeEffect) {
+                        case 'boids': effectInstance.current = new BoidsEffect(w, h); break;
+                        case 'slime': effectInstance.current = new SlimeEffect(w, h); break;
+                        case 'gameoflife': effectInstance.current = new LifeEffect(w, h); break;
+                        case 'voronoi': effectInstance.current = new VoronoiEffect(w, h); break;
+                        case 'delaunay': effectInstance.current = new DelaunayEffect(w, h); break;
+                        case 'lissajous': effectInstance.current = new LissajousEffect(w, h); break;
+                        case 'phyllotaxis': effectInstance.current = new PhyllotaxisEffect(w, h); break;
+                        default: effectInstance.current = new BoidsEffect(w, h);
+                    }
+                };
+                loadEffect();
+
+                const handleResize = () => {
+                    w = container.clientWidth; h = container.clientHeight;
+                    canvas.width = w; canvas.height = h;
+                    effectInstance.current?.resize(w, h);
+                };
+
+                const handleMove = (e) => {
+                    const rect = canvas.getBoundingClientRect();
+                    let clientX = e.clientX;
+                    let clientY = e.clientY;
+                    
+                    if (e.touches && e.touches.length > 0) {
+                        clientX = e.touches[0].clientX;
+                        clientY = e.touches[0].clientY;
+                    }
+                    
+                    if (clientX !== undefined) {
+                        const cx = clientX - rect.left;
+                        const cy = clientY - rect.top;
+                        mouse.current.x = cx; mouse.current.y = cy;
+                    }
+                };
+                
+                const handleDown = (e) => { mouse.current.isDown = true; mouse.current.click = true; handleMove(e); };
+                const handleUp = () => { mouse.current.isDown = false; };
+
+                window.addEventListener('resize', handleResize);
+                canvas.addEventListener('mousemove', handleMove);
+                canvas.addEventListener('mousedown', handleDown);
+                canvas.addEventListener('mouseup', handleUp);
+                canvas.addEventListener('touchmove', handleMove, {passive:false});
+                canvas.addEventListener('touchstart', handleDown, {passive:false});
+                canvas.addEventListener('touchend', handleUp);
+
+                let frameCount = 0; let lastTime = performance.now();
+
+                const animate = (time) => {
+                    animationRef.current = requestAnimationFrame(animate);
+                    if (!effectInstance.current) return;
+                    
+                    const fpsInterval = 1000 / targetFps;
+                    const elapsed = time - lastDrawTimeRef.current;
+                    
+                    if (elapsed > fpsInterval) {
+                        lastDrawTimeRef.current = time - (elapsed % fpsInterval);
+                        frameCount++;
+                        if (time - lastTime >= 1000) { setStats({ fps: frameCount }); frameCount = 0; lastTime = time; }
+                        
+                        effectInstance.current.update(mouse.current, paramsRef.current);
+                        effectInstance.current.draw(ctx, paramsRef.current);
+                        mouse.current.click = false;
+                    }
+                };
+                animationRef.current = requestAnimationFrame(animate);
+
+                return () => {
+                    cancelAnimationFrame(animationRef.current);
+                    window.removeEventListener('resize', handleResize);
+                    canvas.removeEventListener('mousemove', handleMove);
+                    canvas.removeEventListener('mousedown', handleDown);
+                    canvas.removeEventListener('mouseup', handleUp);
+                    canvas.removeEventListener('touchmove', handleMove);
+                    canvas.removeEventListener('touchstart', handleDown);
+                    canvas.removeEventListener('touchend', handleUp);
+                };
+            }, [activeEffect, targetFps]);
+
+            const canvasStyle = (activeEffect === 'gameoflife') ? { imageRendering: 'pixelated' } : {};
+            
+            return (
+                <div className="w-full h-[100dvh] relative overflow-hidden bg-slate-900 font-sans text-white">
+                    <audio ref={bgmRef} loop src="https://cdn.pixabay.com/download/audio/2022/03/21/audio_0c4867c016.mp3?filename=future-chill_awareness-99187.mp3" />
+                    <audio ref={sfxRef} src="https://cdn.pixabay.com/download/audio/2025/06/14/audio_3045825a0d.mp3?filename=sample_confirm_success02_kofi_by_miraclei-360154.mp3" />
+
+                    <div ref={containerRef} className="absolute inset-0 bg-transparent z-0">
+                        <canvas ref={canvasRef} style={canvasStyle} className="block w-full h-full touch-none" />
+                    </div>
+
+                    {!hasStarted && (
+                        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/70 backdrop-blur-sm transition-opacity duration-500 p-4">
+                            <div className="text-center space-y-8 animate-in fade-in zoom-in duration-700 w-full max-w-lg">
+                                <h1 className="text-4xl md:text-6xl font-black bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 bg-clip-text text-transparent drop-shadow-lg">
+                                    ADVANCED LAB
+                                </h1>
+                                <p className="text-slate-300 tracking-widest uppercase text-sm md:text-lg">Biology • Geometry • Evolution</p>
+                                <button onClick={handleStartApp} className="group relative px-8 py-4 bg-transparent overflow-hidden rounded-full border border-white/30 hover:border-white/80 transition-all hover:scale-105 active:scale-95">
+                                    <div className="absolute inset-0 w-0 bg-white transition-all duration-[250ms] ease-out group-hover:w-full opacity-10"></div>
+                                    <div className="flex items-center space-x-3 text-white justify-center">
+                                        <IconPlay className="fill-white" />
+                                        <span className="text-xl font-bold tracking-wider">ENTER</span>
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    <div className={`absolute top-0 left-0 h-[100dvh] w-full sm:w-80 bg-slate-900/95 backdrop-blur-md border-r border-slate-700 z-20 transition-transform duration-300 transform ${showUI && hasStarted ? 'translate-x-0' : '-translate-x-full'} flex flex-col shadow-2xl`}>
+                        <div className="p-5 md:p-6 shrink-0 flex justify-between items-center">
+                            <div>
+                                <h1 className="text-xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-500 bg-clip-text text-transparent">Math & Bio Lab</h1>
+                                <p className="text-[10px] text-slate-400">Advanced Canvas Experiments</p>
+                            </div>
+                            <button onClick={() => setShowUI(false)} className="sm:hidden p-2 text-slate-400 hover:text-white">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                            </button>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto px-5 md:px-6 custom-scrollbar pb-6">
+                            <nav className="space-y-2 pb-6">
+                                <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Simulation</h3>
+                                <button onClick={() => { setActiveEffect('boids'); if(window.innerWidth < 640) setShowUI(false); }} className={`w-full flex items-center p-3 rounded-lg transition-colors ${activeEffect === 'boids' ? 'bg-emerald-600' : 'hover:bg-slate-800'}`}>
+                                    <IconBoids className="mr-3 shrink-0" /> <span>Boids Flocking</span>
+                                </button>
+                                <button onClick={() => { setActiveEffect('slime'); if(window.innerWidth < 640) setShowUI(false); }} className={`w-full flex items-center p-3 rounded-lg transition-colors ${activeEffect === 'slime' ? 'bg-emerald-600' : 'hover:bg-slate-800'}`}>
+                                    <IconBug className="mr-3 shrink-0" /> <span>Slime Mold</span>
+                                </button>
+                                <button onClick={() => { setActiveEffect('gameoflife'); if(window.innerWidth < 640) setShowUI(false); }} className={`w-full flex items-center p-3 rounded-lg transition-colors ${activeEffect === 'gameoflife' ? 'bg-indigo-600' : 'hover:bg-slate-800'}`}>
+                                    <IconGrid className="mr-3 shrink-0" /> <span>Game of Life</span>
+                                </button>
+                                
+                                <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 mt-4">Geometry</h3>
+                                <button onClick={() => { setActiveEffect('voronoi'); if(window.innerWidth < 640) setShowUI(false); }} className={`w-full flex items-center p-3 rounded-lg transition-colors ${activeEffect === 'voronoi' ? 'bg-cyan-600' : 'hover:bg-slate-800'}`}>
+                                    <IconHex className="mr-3 shrink-0" /> <span>Voronoi</span>
+                                </button>
+                                <button onClick={() => { setActiveEffect('delaunay'); if(window.innerWidth < 640) setShowUI(false); }} className={`w-full flex items-center p-3 rounded-lg transition-colors ${activeEffect === 'delaunay' ? 'bg-cyan-600' : 'hover:bg-slate-800'}`}>
+                                    <IconNetwork className="mr-3 shrink-0" /> <span>Delaunay</span>
+                                </button>
+                                <button onClick={() => { setActiveEffect('lissajous'); if(window.innerWidth < 640) setShowUI(false); }} className={`w-full flex items-center p-3 rounded-lg transition-colors ${activeEffect === 'lissajous' ? 'bg-pink-600' : 'hover:bg-slate-800'}`}>
+                                    <IconInfinity className="mr-3 shrink-0" /> <span>Lissajous</span>
+                                </button>
+                                <button onClick={() => { setActiveEffect('phyllotaxis'); if(window.innerWidth < 640) setShowUI(false); }} className={`w-full flex items-center p-3 rounded-lg transition-colors ${activeEffect === 'phyllotaxis' ? 'bg-pink-600' : 'hover:bg-slate-800'}`}>
+                                    <IconFlower className="mr-3 shrink-0" /> <span>Phyllotaxis</span>
+                                </button>
+                            </nav>
+
+                            {Object.keys(params).length > 0 && (
+                                <div className="mb-6 border-t border-slate-700 pt-5">
+                                    <div className="flex items-center gap-2 mb-4 text-slate-300">
+                                        <IconSliders size={14} />
+                                        <h3 className="text-[10px] font-bold uppercase tracking-wider">Adjustments</h3>
+                                    </div>
+                                    <div className="space-y-4">
+                                        {Object.entries(params).map(([key, val]) => {
+                                            const config = DEFAULT_PARAMS[activeEffect][key];
+                                            if (!config) return null;
+                                            return (
+                                                <div key={key} className="space-y-1">
+                                                    <div className="flex justify-between text-xs text-slate-400">
+                                                        <span>{config.label}</span>
+                                                        <span className="font-mono text-cyan-400">{Number(val).toFixed(3)}</span>
+                                                    </div>
+                                                    <input type="range" min={config.min} max={config.max} step={(config.max - config.min)/100} value={val} onChange={(e) => handleParamChange(key, parseFloat(e.target.value))} className="w-full h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-cyan-500 hover:accent-cyan-400 touch-pan-x" />
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="p-5 md:p-6 bg-slate-900 border-t border-slate-700 shrink-0 space-y-4">
+                            <button onClick={toggleMute} className="flex items-center space-x-2 text-xs text-slate-400 hover:text-white transition-colors w-full p-2 rounded hover:bg-slate-800">
+                                {isMuted ? <IconVolumeX size={16} /> : <IconVolume2 size={16} />}
+                                <span>{isMuted ? "Sound Off" : "Sound On"}</span>
+                            </button>
+                            <div className="space-y-1">
+                                <div className="flex justify-between items-center text-xs text-slate-400">
+                                    <span className="flex items-center gap-1"><IconSettings size={12} /> Target FPS</span>
+                                    <span className="font-mono text-cyan-400">{targetFps}</span>
+                                </div>
+                                <input type="range" min={15} max={120} step={15} value={targetFps} onChange={(e) => setTargetFps(Number(e.target.value))} className="w-full h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-cyan-500" />
+                            </div>
+                            <div className="text-[10px] text-slate-500 pt-1 flex justify-between">
+                                <span>FPS:</span>
+                                <span className={`font-mono ${stats.fps < targetFps - 5 ? 'text-red-400' : 'text-green-400'}`}>{stats.fps}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {hasStarted && (
+                        <button onClick={() => setShowUI(!showUI)} className="absolute top-4 left-4 z-30 bg-slate-800/80 p-2.5 rounded-lg hover:bg-slate-700 text-white backdrop-blur-sm transition-opacity shadow-lg">
+                            {showUI ? 'Close' : 'Menu'}
+                        </button>
+                    )}
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<AdvancedVisualLab />);
+    </script>
+</body>
+</html>
